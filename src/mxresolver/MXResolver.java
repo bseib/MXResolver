@@ -57,19 +57,23 @@ public class MXResolver {
 		boolean doNewLookup = false;
 		MXLookupResult answer = (MXLookupResult) mxCache.get(domain);
 		if ( answer == null ) {
-			logger.debug("cache did NOT contain answer for domain " + domain);
+			logger.debug("cache did NOT contain answer for domain '" + domain + "'");
 			doNewLookup = true;
 		} else if ( answer.isExpired(MX_CACHE_TTL_SECONDS) ) {
-			logger.debug("cache DID contain answer for domain " + domain + ", but was older than " + MX_CACHE_TTL_SECONDS + " seconds.");
+			logger.debug("cache DID contain answer for domain '" + domain + "', but was older than " + MX_CACHE_TTL_SECONDS + " seconds.");
 			doNewLookup = true;
 			// remove from cache? no it will subsequently be overwritten.
 		} else {
-			logger.debug("cache DID contain answer for domain " + domain + ", and is not expired.");
+			logger.debug("cache DID contain answer for domain '" + domain + "', and is not expired.");
 		}
 		if ( doNewLookup ) {
 			answer = getMXHostsDirectly(domain);
-			logger.debug("a new MX lookup for domain " + domain + " yielded the MX hosts: " + answer.getHostListString());
-			mxCache.put(domain,answer);
+			if ( ! answer.isEmpty() ) {
+				logger.debug("a new MX lookup for domain '" + domain + "' yielded the MX hosts: " + answer.getHostListString());
+				mxCache.put(domain,answer);
+			} else {
+				logger.debug("No MX records or A records exist for domain '" + domain + "'.");
+			}
 		}
 		return answer.getHosts();
 	}
@@ -85,14 +89,14 @@ public class MXResolver {
 			lookup.run();
 			Record[] records = lookup.getAnswers();
 			if ( records == null ) {
-				//throw new MailSenderException("No MX records exist for this host.");
 				// in the event there are no MX records, then punt and try to find A record
 				Lookup lookup2 = new Lookup(atHost,Type.A);
 				lookup2.setResolver(resolver);
 				lookup2.run();
 				records = lookup2.getAnswers();
 				if ( records == null ) {
-					throw new MXResolverException("No MX records or A records exist for '" + atHost + "'.");
+					// the caller will have to check for an empty result and decide not to put it in the cache.
+					return new MXLookupResult(null);
 				}
 			}
 
@@ -145,6 +149,7 @@ public class MXResolver {
 	
 	private class MXLookupResult {
 		
+		final private String[] EMPTY_HOSTS = new String[0];
 		private String hosts[];
 		private long timestamp;
 		
@@ -170,7 +175,17 @@ public class MXResolver {
 		}
 
 		public String[] getHosts() {
+			if ( hosts == null ) {
+				return EMPTY_HOSTS;
+			}
 			return hosts;
+		}
+		
+		public boolean isEmpty() {
+			if ( hosts == null ) {
+				return true;
+			}
+			return false;
 		}
 
 		public boolean isExpired(int ttl_seconds) {

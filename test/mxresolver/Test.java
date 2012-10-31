@@ -30,6 +30,11 @@ public class Test {
 		for ( String h : hosts ) {
 			System.out.println(h);
 		}
+		
+		hosts = mxr.getMXHosts("gentomi.blork");
+		for ( String h : hosts ) {
+			System.out.println(h);
+		}
 	}
 
 }
