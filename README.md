@@ -1,20 +1,20 @@
 How to use:
 
 
-	private MXResolver mxr;
+	private Resolver res;
 	
 	private Test() {
-		this.mxr = new MXResolver();
+		this.res = new Resolver();
 	}
 
-	private void test1() throws MXResolverException {
-		String[] hosts = mxr.getMXHosts("gentomi.com");
+	private void test1() throws ResolverException {
+		String[] hosts = res.getMXHosts("gentomi.com");
 		for ( String h : hosts ) {
 			System.out.println(h);
 		}
 	}
 	
 	
-You should create a singleton instance of a MXResolver, so that it may benefit from caching.
+You should create a singleton instance of a Resolver, so that it may benefit from caching.
 
 You will need to include the javadns-2.x.x.jar file in your project.
